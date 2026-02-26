@@ -4,6 +4,8 @@ import { TREM_BRANCHES } from "../constants/tremBranches";
 import { COURSES } from "../constants/courses";
 import { Field } from "../component/Field";
 import { CourseOption } from "../component/CourseOption";
+import { register } from "../api/register.api";
+import { useNavigate } from "react-router-dom";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface FormState {
@@ -69,6 +71,7 @@ export default function LeadConferenceForm(): JSX.Element {
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [mounted] = useState<boolean>(true); // check if this might cause bugs later on
+//   const navigate = useNavigate();
 
   const toggleOnline = (id: string): void => {
     setForm((prev) => {
@@ -113,7 +116,32 @@ export default function LeadConferenceForm(): JSX.Element {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     const isValid = await validate();
-    if (isValid) setSubmitted(true);
+    if (isValid){
+        try {
+            // call the api
+        const result = await register({
+            firstName: form.firstName,
+            lastName: form.lastName,
+            email: form.email,
+            phone: form.phone,
+            isMember: form.isMember === "yes",
+            branch: form.isMember === "yes" ? form.branch : undefined,
+            physicalCourse: form.physicalCourse,
+            onlineCourses: form.onlineCourses,
+        });
+        
+       console.log("Registration successful:", result);
+         // redirect to payment page with the reference
+        window.location.href = result.data.checkoutUrl;
+        } catch (error) {
+            console.error("Registration failed:", error);
+            alert("Registration failed. Please try again later.");
+            return;
+        }
+        
+ setSubmitted(true);
+        
+    };
   };
 
   if (submitted) {

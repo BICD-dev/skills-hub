@@ -4,6 +4,7 @@ import helmet from "helmet";
 import configService from "./config/config";
 import paymentRouter from "./routes/payment.route";
 import { errorHandler } from "./utils/middleware/error.middleware";
+import registrationRouter from "./routes/registration.route";
 const app = express();
 
 // validate env variables on startup
@@ -22,6 +23,7 @@ app.use(express.json());
 
 // routes
 app.use("/api/payment", paymentRouter);
+app.use("/api/registration", registrationRouter);
 
 app.use(errorHandler);
 

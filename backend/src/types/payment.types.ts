@@ -2,11 +2,11 @@
 // payment.types.ts
 // Shared types for the payment module
 // ─────────────────────────────────────────────────────────────────────────────
-
+ 
 export interface InitiatePaymentDto {
   amount: number;         // in Naira (e.g. 5000)
   currency?: string;      // defaults to "NGN"
-  reference: string;      // your unique reference (min 8 chars)
+  reference?: string;      // your unique reference (min 8 chars)
   customerName: string;
   customerEmail: string;
   redirectUrl?: string;   // where Kora redirects after payment
