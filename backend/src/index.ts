@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import configService from "./config/config";
 import paymentRouter from "./routes/payment.route";
+import { errorHandler } from "./utils/middleware/error.middleware";
 const app = express();
 
 // validate env variables on startup
@@ -21,6 +22,8 @@ app.use(express.json());
 
 // routes
 app.use("/api/payment", paymentRouter);
+
+app.use(errorHandler);
 
 app.get("/", (req, res) => {
   res.send("Welcome to Skills Hub API!");
