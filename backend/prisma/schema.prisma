@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+// ───────────────────────
+// prisma/schema.prisma
+// ───────────────────────
+//
+// Setup:
+//   1. npm install prisma @prisma/client
+//   2. npx prisma init              ← creates this file + .env with DATABASE_URL
+//   3. Add your Supabase/Postgres DATABASE_URL to .env
+//   4. npx prisma migrate dev --name init
+//   5. npx prisma generate
+//
+// ───────────────────────
+
+
+// ───────────────────────
+
+enum PaymentStatus {
+  PENDING   
+  PAID     
+  FAILED    
+}
+
+// ───────────────────────
+
+model Registration {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //  Personal info
+  firstName String
+  lastName  String
+  phone     String
+  email     String  @unique   // one registration per email address
+
+  // ── TREM membership ──
+  isMember Boolean
+  branch   String?            // only set when isMember = true
+
+  // ── Course selections 
+  physicalCourse String        // course ID (e.g. "p1")
+  onlineCourses  String[]      // array of course IDs, max 2 enforced at service layer
+
+  // ── Payment ──────────
+  paymentStatus    PaymentStatus @default(PENDING)
+  paymentReference String        @unique  // Kora reference used to initiate & verify
+
+  // ── Relation ─────────
+  payment Payment?             // one-to-one with Payment record
+
+  @@index([email])
+  @@index([paymentReference])
+}
+
+// ───────────────────────
+
+model Payment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ── Relation ─────────
+  registrationId String       @unique
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  // ── Kora data ────────
+  reference       String        @unique   // mirrors Registration.paymentReference
+  amount          Float
+  currency        String        @default("NGN")
+  status          PaymentStatus @default(PENDING)
+  koraRawResponse Json?         // full Kora verify response for audit trail
+  paidAt          DateTime?     // set when status becomes PAID
+
+  @@index([reference])
+}
