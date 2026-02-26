@@ -186,6 +186,7 @@ class ConfigService {
 
 // ─── SINGLETON INSTANCE ───────────────────────────────────────────────────────
 const configService = new ConfigService();
+configService.validate()
 
 export default configService;
 export { Config, ConfigService };
