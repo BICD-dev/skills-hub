@@ -1,0 +1,75 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap");
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.font-display {
+  font-family: "Bebas Neue", sans-serif;
+}
+.font-body {
+  font-family: "DM Sans", sans-serif;
+}
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.stagger-1 {
+  animation: slideUp 0.5s ease both 0.05s;
+}
+.stagger-2 {
+  animation: slideUp 0.5s ease both 0.12s;
+}
+.stagger-3 {
+  animation: slideUp 0.5s ease both 0.2s;
+}
+.stagger-4 {
+  animation: slideUp 0.5s ease both 0.27s;
+}
+.stagger-5 {
+  animation: slideUp 0.5s ease both 0.34s;
+}
+.stagger-6 {
+  animation: slideUp 0.5s ease both 0.41s;
+}
+.reveal {
+  animation: slideUp 0.35s ease both;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper::after {
+  content: "▾";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 14px;
+  color: #000;
+}
