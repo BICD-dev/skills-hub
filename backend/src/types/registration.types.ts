@@ -35,8 +35,8 @@ export interface RegistrationRecord {
   email: string;
   isMember: boolean;
   branch: string | null;
-  physicalCourse: string;
-  onlineCourses: string[];
+  physicalCourse?: string;
+  onlineCourses?: string[];
   paymentStatus: PaymentStatus;
   paymentReference: string;
   createdAt: Date;
