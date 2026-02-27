@@ -176,7 +176,7 @@ export default function LeadConferenceForm(): JSX.Element {
           </div>
           <div>
             <p className="text-yellow-400 text-xs font-bold uppercase tracking-[0.3em] mb-0.5">
-              TREM Oko Oba latterhuse sanctuary
+              TREM latterhouse sanctuary
             </p>
             <h1 className="font-display text-4xl text-white leading-none tracking-wide">
               LEAD CONFERENCE
