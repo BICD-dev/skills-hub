@@ -7,5 +7,6 @@ export const TREM_BRANCHES = [
   "TREM Shasha",
   "TREM Orisumbare",
   "TREM Ayobo",
-  "Other",
+  "TREM Council",
+  "TREM Ishefun",
 ];
