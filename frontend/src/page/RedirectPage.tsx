@@ -4,6 +4,8 @@ import { PaymentFailed } from "../component/PaymentFailed";
 import { verifyPayment } from "../api/register.api";
 import { LoadingState } from "../component/LoadingState";
 import { NoReferenceState } from "../component/NoReference";
+import logo from "../assets/logo1.png";
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type VerificationStatus = "loading" | "success" | "failed" | "no-reference";
@@ -69,9 +71,7 @@ export default function PaymentVerification() {
         <div className="bg-black px-6 py-5 flex items-center gap-6 border-b-4 border-yellow-400">
           {/* Logo placeholder */}
           <div className="w-14 h-14 border-2 border-yellow-400 flex items-center justify-center shrink-0">
-            <span className="text-yellow-400 text-xs font-bold uppercase tracking-widest text-center leading-tight">
-              LOGO
-            </span>
+        <img src={logo} alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <p className="text-yellow-400 text-xs font-bold uppercase tracking-[0.3em] mb-0.5">
