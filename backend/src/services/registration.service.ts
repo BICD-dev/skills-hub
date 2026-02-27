@@ -112,7 +112,7 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
           email: dto.email.trim().toLowerCase(),
           isMember: dto.isMember,
           branch: dto.isMember ? dto.branch?.trim() ?? null : null,
-          physicalCourse: dto.physicalCourse?.trim() ?? "No physical course selected",
+          physicalCourse: dto.physicalCourse?.trim() ?? null,
           onlineCourses: dto.onlineCourses?.map((c) => c.trim()) ?? [],
           paymentStatus: PaymentStatus.PENDING,
           paymentReference,

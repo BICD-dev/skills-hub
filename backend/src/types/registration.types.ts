@@ -35,11 +35,12 @@ export interface RegistrationRecord {
   email: string;
   isMember: boolean;
   branch: string | null;
-  physicalCourse?: string;
-  onlineCourses?: string[];
+  physicalCourse: string | null; // Changed from ? to | null
+  onlineCourses: string[] | null; // Ensure this matches Prisma too
   paymentStatus: PaymentStatus;
   paymentReference: string;
   createdAt: Date;
+  updatedAt: Date; // Don't forget this if Prisma returns it!
 }
 
 // ── Validation errors map ─────────────────────────────────────────────────────
