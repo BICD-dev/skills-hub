@@ -64,88 +64,84 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
   // This is called BEFORE payment. The registration starts as PENDING.
   // Payment must be confirmed (via webhook or verify endpoint) to mark it PAID.
   async createRegistration(
-    dto: CreateRegistrationDto
-  ): Promise<RegistrationCreatedResult> {
-    // Check for duplicate email
-    const existing = await prisma.registration.findUnique({
-      where: { email: dto.email.trim().toLowerCase() },
-    });
+  dto: CreateRegistrationDto
+): Promise<RegistrationCreatedResult> {
+  const email = dto.email.trim().toLowerCase();
 
-    if (existing) {
-      if (existing.paymentStatus === PaymentStatus.PAID) {
-        throw new Error(
-          `This email address is already registered and payment has been confirmed.`);
-      }
+  // 1. Check for an already PAID registration first
+  const existingPaid = await prisma.registration.findFirst({
+    where: { 
+      email: email,
+      paymentStatus: PaymentStatus.PAID 
+    },
+  });
 
-      // If they registered before but never paid, reuse the same record
-      // and return the existing reference so they can retry payment.
-      // generate a new reference
-
-      const reference = PaymentService.generateReference("LEAD")
-      // update db registration and payment records with the new reference so that the old one doesn't get paid out by mistake if they complete an old session
-      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        await tx.registration.update({
-          where:{id:existing.id},
-          data:{paymentReference:reference}
-        })
-        await tx.payment.update({
-          where:{registrationId:existing.id},
-          data:{reference:reference}
-        })
-      })
-      await prisma.payment.update({
-        where:{registrationId:existing.id},
-        data:{reference:reference}
-      })
-      return {
-        registrationId: existing.id,
-        paymentReference: reference,
-        email: existing.email,
-        fullName: `${existing.firstName} ${existing.lastName}`,
-      };
-    }
-
-    const paymentReference = PaymentService.generateReference("LEAD");
-
-    // Use a transaction to create both Registration and Payment atomically.
-    // If either insert fails, neither is committed.
-    const registration = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const reg = await tx.registration.create({
-        data: {
-          firstName: dto.firstName.trim(),
-          lastName: dto.lastName.trim(),
-          phone: dto.phone.trim(),
-          email: dto.email.trim().toLowerCase(),
-          isMember: dto.isMember,
-          branch: dto.isMember ? dto.branch?.trim() ?? null : null,
-          physicalCourse: dto.physicalCourse?.trim() ?? null,
-          onlineCourses: dto.onlineCourses?.map((c) => c.trim()) ?? [],
-          paymentStatus: PaymentStatus.PENDING,
-          paymentReference,
-        },
-      });
-
-      await tx.payment.create({
-        data: {
-          registrationId: reg.id,
-          reference: paymentReference,
-          amount: Number(process.env.CONFERENCE_FEE ?? 5000),
-          currency: "NGN",
-          status: PaymentStatus.PENDING,
-        },
-      });
-
-      return reg;
-    });
-
-    return {
-      registrationId: registration.id,
-      paymentReference: registration.paymentReference,
-      email: registration.email,
-      fullName: `${registration.firstName} ${registration.lastName}`,
-    };
+  if (existingPaid) {
+    throw new Error(`This email address is already registered and payment has been confirmed.`);
   }
 
+  // 2. Prepare data for the Upsert
+  const paymentReference = PaymentService.generateReference("LEAD");
+  const amount = Number(process.env.CONFERENCE_FEE ?? 1000);
+
+  // 3. Execute Transaction: Upsert Registration AND Payment
+  const result = await prisma.$transaction(async (tx) => {
+    // UPSERT Registration: Update if email exists, otherwise Create
+    const reg = await tx.registration.upsert({
+      where: { email: email },
+      update: {
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName.trim(),
+        phone: dto.phone.trim(),
+        isMember: dto.isMember,
+        branch: dto.isMember ? dto.branch?.trim() ?? null : null,
+        physicalCourse: dto.physicalCourse?.trim() ?? null,
+        onlineCourses: dto.onlineCourses?.map((c) => c.trim()) ?? [],
+        paymentReference: paymentReference, // Update to new reference
+        paymentStatus: PaymentStatus.PENDING,
+      },
+      create: {
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName.trim(),
+        phone: dto.phone.trim(),
+        email: email,
+        isMember: dto.isMember,
+        branch: dto.isMember ? dto.branch?.trim() ?? null : null,
+        physicalCourse: dto.physicalCourse?.trim() ?? null,
+        onlineCourses: dto.onlineCourses?.map((c) => c.trim()) ?? [],
+        paymentReference: paymentReference,
+        paymentStatus: PaymentStatus.PENDING,
+      },
+    });
+
+    // UPSERT Payment: Using payment link via registrationId
+    // Note: This assumes a unique constraint on registrationId in the Payment table
+    await tx.payment.upsert({
+      where: { registrationId: reg.id },
+      update: {
+        reference: paymentReference,
+        amount: amount,
+        status: PaymentStatus.PENDING,
+      },
+      create: {
+        registrationId: reg.id,
+        reference: paymentReference,
+        amount: amount,
+        currency: "NGN",
+        status: PaymentStatus.PENDING,
+      },
+    });
+
+    return reg;
+  });
+
+  return {
+    registrationId: result.id,
+    paymentReference: result.paymentReference,
+    email: result.email,
+    fullName: `${result.firstName} ${result.lastName}`,
+  };
+}
   // ── Mark payment as successful ────────────────────────────────────────────
   // Called by the webhook handler after Kora confirms payment.
   // Runs in a single transaction so both records stay in sync.
@@ -235,3 +231,4 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
     });
   }
 }
+

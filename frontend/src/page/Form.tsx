@@ -226,10 +226,10 @@ export default function LeadConferenceForm(): JSX.Element {
         >
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-3xl font-black uppercase tracking-tight text-black mb-2">
-            You're Registered!
+            You will be redirected to pay the application fee
           </h2>
           <p className="text-black/60 font-medium mb-8">
-            The next step is to pay the application fee to confirm your spot. You will be redirected to the payment page shortly. 
+            Please stay on this page!!!
           </p>
          
         </div>
