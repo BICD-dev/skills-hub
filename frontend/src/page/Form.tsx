@@ -5,7 +5,6 @@ import { COURSES } from "../constants/courses";
 import { Field } from "../component/Field";
 import { CourseOption } from "../component/CourseOption";
 import { register } from "../api/register.api";
-import logo from "../assets/logo1.png";
 // import { useNavigate } from "react-router-dom";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
