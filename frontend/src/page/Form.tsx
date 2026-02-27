@@ -156,15 +156,9 @@ export default function LeadConferenceForm(): JSX.Element {
             You're Registered!
           </h2>
           <p className="text-black/60 font-medium mb-8">
-            We'll send confirmation details to{" "}
-            <span className="text-black font-bold">{form.email}</span>.
+            The next step is to pay the application fee to confirm your spot. You will be redirected to the payment page shortly. 
           </p>
-          <button
-            onClick={() => { setSubmitted(false); setForm({ firstName:"",lastName:"",phone:"",email:"",isMember:"",branch:"",physicalCourse:"",onlineCourses:[] }); }}
-            className="bg-black text-yellow-400 font-black uppercase tracking-widest px-8 py-3 hover:bg-yellow-400 hover:text-black border-2 border-black transition-all duration-200"
-          >
-            Register Another
-          </button>
+         
         </div>
       </div>
     );
