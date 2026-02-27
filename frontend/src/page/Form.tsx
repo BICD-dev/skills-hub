@@ -167,7 +167,7 @@ export default function LeadConferenceForm(): JSX.Element {
 
         setTimeout(() => {
           window.location.href = result.data.checkoutUrl;
-        }, 1200);
+        }, 1000);
         return;
         } catch (error) {
             console.error("Registration failed:", error);
