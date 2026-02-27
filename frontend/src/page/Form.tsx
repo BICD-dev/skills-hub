@@ -5,6 +5,7 @@ import { COURSES } from "../constants/courses";
 import { Field } from "../component/Field";
 import { CourseOption } from "../component/CourseOption";
 import { register } from "../api/register.api";
+import { toast } from "react-hot-toast";
 // import { useNavigate } from "react-router-dom";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -51,8 +52,26 @@ const formSchema = yup.object().shape({
     then: (schema) => schema.required("Required"),
     otherwise: (schema) => schema.notRequired(),
   }),
-  physicalCourse: yup.string().required("Select a physical course"),
-  onlineCourses: yup.array().of(yup.string()).min(1, "Select at least one online course").required("Select at least one online course"),
+  physicalCourse: yup.string().notRequired(),
+  onlineCourses: yup.array().of(yup.string()).notRequired(),
+}).test("at-least-one-course", function (values) {
+  const hasPhysical = !!values.physicalCourse?.trim();
+  const hasOnline = Array.isArray(values.onlineCourses) && values.onlineCourses.length > 0;
+
+  if (hasPhysical || hasOnline) {
+    return true;
+  }
+
+  throw new yup.ValidationError([
+    this.createError({
+      path: "physicalCourse",
+      message: "Please select at least one physical or online course",
+    }),
+    this.createError({
+      path: "onlineCourses",
+      message: "Please select at least one physical or online course",
+    }),
+  ]);
 });
 
 // ─── MAIN FORM ────────────────────────────────────────────────────────────────
@@ -90,12 +109,23 @@ export default function LeadConferenceForm(): JSX.Element {
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const validationErrors: FormErrors = {};
+        const courseMessages = new Set<string>();
+
         err.inner.forEach((error) => {
           if (error.path) {
             validationErrors[error.path] = error.message;
+
+            if (error.path === "physicalCourse" || error.path === "onlineCourses") {
+              courseMessages.add(error.message);
+            }
           }
         });
+
         setErrors(validationErrors);
+
+        courseMessages.forEach((message) => {
+          toast.error(message, { id: `course-validation-${message}` });
+        });
       }
       return false;
     }
@@ -129,13 +159,53 @@ export default function LeadConferenceForm(): JSX.Element {
             physicalCourse: form.physicalCourse,
             onlineCourses: form.onlineCourses,
         });
-        
-       console.log("Registration successful:", result);
-         // redirect to payment page with the reference
-        window.location.href = result.data.checkoutUrl;
+
+        toast.success("Registration successful! Redirecting to payment...");
+        setSubmitted(true);
+
+        setTimeout(() => {
+          window.location.href = result.data.checkoutUrl;
+        }, 1200);
+        return;
         } catch (error) {
             console.error("Registration failed:", error);
-            alert("Registration failed. Please try again later.");
+
+            const errorData = (error as {
+              response?: {
+                data?: {
+                  message?: string;
+                  errors?: Record<string, string | string[]>;
+                };
+              };
+            })?.response?.data;
+
+            const backendMessage = errorData?.message;
+            const backendErrors = errorData?.errors;
+
+            if (!errorData) {
+              toast.error("Network error. Please check your internet connection and try again.", { id: "network-fallback" });
+            } else if (backendMessage) {
+              toast.error(backendMessage, { id: "backend-message" });
+            } else {
+              toast.error("Registration failed. Please try again later.", { id: "backend-fallback" });
+            }
+
+            if (backendErrors && typeof backendErrors === "object") {
+              const mappedErrors: FormErrors = {};
+
+              Object.entries(backendErrors).forEach(([key, value]) => {
+                const message = Array.isArray(value) ? value[0] : value;
+                if (typeof message === "string" && message.trim()) {
+                  mappedErrors[key] = message;
+                  toast.error(message, { id: `backend-field-${key}` });
+                }
+              });
+
+              if (Object.keys(mappedErrors).length > 0) {
+                setErrors((prev) => ({ ...prev, ...mappedErrors }));
+              }
+            }
+
             return;
         }
         
@@ -357,6 +427,7 @@ export default function LeadConferenceForm(): JSX.Element {
                   ))}
                 </div>
                 {errors.onlineCourses && <ErrMsg msg={errors.onlineCourses} />}
+                
               </div>
 
               <Divider />

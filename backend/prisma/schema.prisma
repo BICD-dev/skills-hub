@@ -52,8 +52,8 @@ model Registration {
   branch   String?            // only set when isMember = true
 
   // ── Course selections 
-  physicalCourse String        // course ID (e.g. "p1")
-  onlineCourses  String[]      // array of course IDs, max 2 enforced at service layer
+  physicalCourse String?        // course ID (e.g. "p1")
+  onlineCourses  String[]  @default([])     // array of course IDs, max 2 enforced at service layer
 
   // ── Payment ──────────
   paymentStatus    PaymentStatus @default(PENDING)

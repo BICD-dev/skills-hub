@@ -13,8 +13,9 @@ export interface CreateRegistrationDto {
   email: string;
   isMember: boolean;
   branch?: string;           // required if isMember = true
-  physicalCourse: string;    // one course ID
-  onlineCourses: string[];   // one or two course IDs
+  // add decorator later to validate  that either physical or online course was provided or both
+  physicalCourse?: string;    // one course ID
+  onlineCourses?: string[];   // one or two course IDs
 }
 
 // ── What the service returns after creating a registration ───────────────────

@@ -18,45 +18,47 @@ import { Prisma } from "../generated/prisma/client";
 export class RegistrationService {
   private readonly errorhandler = errorHandler
     // change this to class validator later, fine for now since there is just one dto and not much logic
+validate(dto: CreateRegistrationDto): ValidationErrors {
+  const errors: ValidationErrors = {};
 
-  validate(dto: CreateRegistrationDto): ValidationErrors {
-    const errors: ValidationErrors = {};
+  if (!dto.firstName?.trim()) errors.firstName = "First name is required.";
+  if (!dto.lastName?.trim()) errors.lastName = "Last name is required.";
 
-    if (!dto.firstName?.trim()) errors.firstName = "First name is required.";
-    if (!dto.lastName?.trim()) errors.lastName = "Last name is required.";
-
-    if (!dto.phone?.trim()) {
-      errors.phone = "Phone number is required.";
-    } else if (!/^\+?[\d\s\-()]{7,15}$/.test(dto.phone.trim())) {
-      errors.phone = "Please enter a valid phone number.";
-    }
-
-    if (!dto.email?.trim()) {
-      errors.email = "Email address is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dto.email.trim())) {
-      errors.email = "Please enter a valid email address.";
-    }
-
-    if (typeof dto.isMember !== "boolean") {
-      errors.isMember = "Please indicate your TREM membership status.";
-    }
-
-    if (dto.isMember && !dto.branch?.trim()) {
-      errors.branch = "Please select your TREM branch.";
-    }
-
-    if (!dto.physicalCourse?.trim()) {
-      errors.physicalCourse = "Please select a physical course.";
-    }
-
-    if (!Array.isArray(dto.onlineCourses) || dto.onlineCourses.length === 0) {
-      errors.onlineCourses = "Please select at least one online course.";
-    } else if (dto.onlineCourses.length > 2) {
-      errors.onlineCourses = "You may select at most two online courses.";
-    }
-
-    return errors;
+  if (!dto.phone?.trim()) {
+    errors.phone = "Phone number is required.";
+  } else if (!/^\+?[\d\s\-()]{7,15}$/.test(dto.phone.trim())) {
+    errors.phone = "Please enter a valid phone number.";
   }
+
+  if (!dto.email?.trim()) {
+    errors.email = "Email address is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dto.email.trim())) {
+    errors.email = "Please enter a valid email address.";
+  }
+
+  if (typeof dto.isMember !== "boolean") {
+    errors.isMember = "Please indicate your TREM membership status.";
+  }
+
+  if (dto.isMember && !dto.branch?.trim()) {
+    errors.branch = "Please select your TREM branch.";
+  }
+
+  // At least one course must be selected
+  const hasPhysical = !!dto.physicalCourse?.trim();
+  const hasOnline = Array.isArray(dto.onlineCourses) && dto.onlineCourses.length > 0;
+
+  if (!hasPhysical && !hasOnline) {
+    errors.courses = "Please select at least one physical or online course.";
+  }
+
+  // Online courses cap still applies if any are selected
+  if (hasOnline && dto.onlineCourses!.length > 2) {
+    errors.onlineCourses = "You may select at most two online courses.";
+  }
+
+  return errors;
+}
 
   // ── Create a pending registration ─────────────────────────────────────────
   // This is called BEFORE payment. The registration starts as PENDING.
