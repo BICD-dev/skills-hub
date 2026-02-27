@@ -83,12 +83,18 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
 
       const reference = PaymentService.generateReference("LEAD")
       // update db registration and payment records with the new reference so that the old one doesn't get paid out by mistake if they complete an old session
-      await prisma.registration.update({
-        where:{id:existing.id},
-        data:{paymentReference:reference}
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        await tx.registration.update({
+          where:{id:existing.id},
+          data:{paymentReference:reference}
+        })
+        await tx.payment.update({
+          where:{registrationId:existing.id},
+          data:{reference:reference}
+        })
       })
       await prisma.payment.update({
-        where:{id:existing.id},
+        where:{registrationId:existing.id},
         data:{reference:reference}
       })
       return {
