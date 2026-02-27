@@ -68,17 +68,14 @@ export default function PaymentVerification() {
       <div className="min-h-screen bg-white font-body flex flex-col">
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="bg-black px-6 py-5 flex items-center gap-6 border-b-4 border-yellow-400">
-          {/* Logo placeholder */}
-          <div className="w-14 h-14 border-2 border-yellow-400 flex items-center justify-center shrink-0">
-        <img src="/assets/logo1.PNG" alt="Logo" className="w-full h-full object-contain" />
-          </div>
           <div>
             <p className="text-yellow-400 text-xs font-bold uppercase tracking-[0.3em] mb-0.5">
-              TREM Oko Oba latterhouse sanctuary
+              TREM latterhouse sanctuary
             </p>
-            <h1 className="font-display text-4xl text-white leading-none tracking-wide">
-              LEAD CONFERENCE
-            </h1>
+            {/* Logo placeholder */}
+          <div className="w-50 h-14 flex items-center justify-center shrink-0">
+        <img src="/assets/logo1.PNG" alt="Logo" className="w-full h-full object-contain" />
+          </div>
           </div>
           <div className="ml-auto hidden sm:flex flex-col items-end">
             <span className="text-white/40 text-xs uppercase tracking-widest">

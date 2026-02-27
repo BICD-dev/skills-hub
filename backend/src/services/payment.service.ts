@@ -12,8 +12,11 @@ import {
   KoraWebhookPayload,
   PaymentInitResult,
   PaymentVerifyResult,
-} from "../types/payment.types";
 
+} from "../types/payment.types";
+import { PaymentStatus } from "../generated/prisma/enums";
+import { prisma } from "../lib/prisma";
+import { Prisma } from "../generated/prisma/client";
 export class PaymentService {
   private readonly baseUrl: string;
   private readonly secretKey: string;
@@ -105,6 +108,24 @@ export class PaymentService {
     }
 
     const { data } = result;
+    // update the payment status and the paidAt timestap also the kora response 
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.payment.update({
+        where: { reference },
+        data: {
+          status: data.status === "success" ? PaymentStatus.PAID : PaymentStatus.FAILED,
+          paidAt: data.status === "success" ? new Date() : null,
+          koraRawResponse: data as object,
+        },
+      });
+
+      await tx.registration.updateMany({
+        where: { paymentReference: reference },
+        data: {
+          paymentStatus: data.status === "success" ? PaymentStatus.PAID : PaymentStatus.FAILED,
+        },
+      });
+    });
 
     return {
       paid: data.status === "success",

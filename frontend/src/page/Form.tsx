@@ -170,17 +170,15 @@ export default function LeadConferenceForm(): JSX.Element {
       <div className="min-h-screen bg-white font-body">
         {/* ── HEADER ── */}
         <div className="bg-black px-6 py-5 flex items-center gap-6 border-b-4 border-yellow-400">
-          {/* Logo placeholder */}
-          <div className="w-14 h-14 border-2 border-yellow-400 flex items-center justify-center shrink-0">
-        <img src="/assets/logo1.PNG" alt="Logo" className="w-full h-full object-contain" />
-          </div>
+          
           <div>
             <p className="text-yellow-400 text-xs font-bold uppercase tracking-[0.3em] mb-0.5">
               TREM latterhouse sanctuary
             </p>
-            <h1 className="font-display text-4xl text-white leading-none tracking-wide">
-              LEAD CONFERENCE
-            </h1>
+        {/* Logo placeholder */}
+          <div className="w-50 h-14 flex items-center justify-center shrink-0">
+        <img src="/assets/logo1.PNG" alt="Logo" className="w-full h-full object-contain" />
+          </div>
           </div>
           <div className="ml-auto hidden sm:flex flex-col items-end">
             <span className="text-white/40 text-xs uppercase tracking-widest">Registration</span>
@@ -272,8 +270,8 @@ export default function LeadConferenceForm(): JSX.Element {
                         onChange={onChange}
                       >
                         <option value="">– Select an option –</option>
-                        <option value="yes">Yes, I am a TREM member</option>
-                        <option value="no">No, I am not a member</option>
+                        <option value="yes">Yes, I am</option>
+                        <option value="no">No, I am not</option>
                       </select>
                     </div>
                     {errors.isMember && <ErrMsg msg={errors.isMember} />}
@@ -382,7 +380,7 @@ export default function LeadConferenceForm(): JSX.Element {
           <div className="stagger-6 text-center mt-8">
             <div className="h-1 w-16 bg-yellow-400 mx-auto mb-4" />
             <p className="text-xs text-black/40 uppercase tracking-widest">
-              © 2026 TREM Oko Oba latterhuse sanctuary · Lead Conference
+              © 2026 TREM latterhouse sanctuary · Lead Conference
             </p>
           </div>
         </div>
