@@ -173,7 +173,7 @@ export default function LeadConferenceForm(): JSX.Element {
         <div className="bg-black px-6 py-5 flex items-center gap-6 border-b-4 border-yellow-400">
           {/* Logo placeholder */}
           <div className="w-14 h-14 border-2 border-yellow-400 flex items-center justify-center shrink-0">
-        <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+        <img src="/assets/logo1.PNG" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <p className="text-yellow-400 text-xs font-bold uppercase tracking-[0.3em] mb-0.5">
