@@ -5,7 +5,7 @@ import { COURSES } from "../constants/courses";
 import { Field } from "../component/Field";
 import { CourseOption } from "../component/CourseOption";
 import { register } from "../api/register.api";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 interface FormState {

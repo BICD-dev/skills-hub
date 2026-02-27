@@ -58,6 +58,7 @@ export class RegistrationController {
       const payment = await this.paymentService.initiatePayment({
         amount: conferenceFeee,
         currency: "NGN",
+        reference:registration.paymentReference, //
         customerName: registration.fullName,
         customerEmail: registration.email,
         metadata: {

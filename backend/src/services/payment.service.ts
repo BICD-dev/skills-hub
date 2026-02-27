@@ -41,7 +41,7 @@ export class PaymentService {
   async initiatePayment(dto: InitiatePaymentDto): Promise<PaymentInitResult> {
     const korapayConfig = configService.getKorapayConfig();
     // generate a new reference every time we initiate a payment, even if the caller doesn't provide one. This ensures uniqueness and prevents potential issues with duplicate references. If the caller provides a reference, we can use it (after validating it meets Kora's requirements), but if they don't, we generate one automatically.
-    const reference = dto.reference ?? PaymentService.generateReference("LEAD");
+    const reference = dto.reference 
 
     // build payload
     const payload = {

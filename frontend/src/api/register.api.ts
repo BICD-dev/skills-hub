@@ -23,6 +23,20 @@ interface RegisterResponse {
     };
   };
 }
+
+interface VerifyResult {
+  data: {
+    status: string;
+    message: string;
+    data: {
+      paid: boolean;
+      status: string;
+      reference: string;
+      amount: number;
+      currency: string;
+    };
+  };
+}
 export const register = async (userData: RegisterData) => {
   const response: RegisterResponse = await axios.post(
     `${import.meta.env.VITE_API_URL}/registration`,
@@ -32,8 +46,8 @@ export const register = async (userData: RegisterData) => {
 };
 
 export const verifyPayment = async (reference: string) => {
-  const response = await axios.get(
-    `${import.meta.env.VITE_API_URL}/payment/verify/${encodeURIComponent(reference)}`
+  const response:VerifyResult = await axios.get(
+    `${import.meta.env.VITE_API_URL}/payment/verify/${reference}`,
   );
   return response.data;
-}
+};

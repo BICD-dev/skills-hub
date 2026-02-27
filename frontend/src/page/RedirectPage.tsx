@@ -52,8 +52,8 @@ export default function PaymentVerification() {
       }
       const response = await verifyPayment(reference);
       console.log("REsponse: ", response);
-      setStatus(response.success ? "success" : "failed");
-      if (response.success) {
+      setStatus(response.data.paid ? "success" : "failed");
+      if (response.data.paid) {
         setResult(response.data);
       } else {
         setErrorMsg(response.message || "Payment verification failed.");

@@ -12,9 +12,10 @@ import {
   RegistrationRecord,
   ValidationErrors,
 } from "../types/registration.types";
+import { errorHandler } from "../utils/middleware/error.middleware";
 
 export class RegistrationService {
-
+  private readonly errorhandler = errorHandler
     // change this to class validator later, fine for now since there is just one dto and not much logic
 
   validate(dto: CreateRegistrationDto): ValidationErrors {
@@ -70,12 +71,23 @@ export class RegistrationService {
     if (existing) {
       if (existing.paymentStatus === PaymentStatus.PAID) {
         throw new Error(
-          `This email address is already registered and payment has been confirmed.`
-        );
+          `This email address is already registered and payment has been confirmed.`);
       }
 
       // If they registered before but never paid, reuse the same record
       // and return the existing reference so they can retry payment.
+      // generate a new reference
+
+      const reference = PaymentService.generateReference("LEAD")
+      // update db registration and payment
+      // await prisma.registration.update({
+      //   where:{id:existing.id},
+      //   data:{paymentReference:reference}
+      // })
+      // await prisma.payment.update({
+      //   where:{id:existing.id},
+      //   data:{reference:reference}
+      // })
       return {
         registrationId: existing.id,
         paymentReference: existing.paymentReference,
