@@ -32,6 +32,9 @@ app.get("/", (req, res) => {
 });
 
 const PORT = configService.getPort();
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Only listen when running locally, not on Vercel
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}

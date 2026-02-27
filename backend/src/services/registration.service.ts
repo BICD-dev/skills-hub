@@ -13,6 +13,7 @@ import {
   ValidationErrors,
 } from "../types/registration.types";
 import { errorHandler } from "../utils/middleware/error.middleware";
+import { Prisma } from "../generated/prisma/client";
 
 export class RegistrationService {
   private readonly errorhandler = errorHandler
@@ -100,7 +101,7 @@ export class RegistrationService {
 
     // Use a transaction to create both Registration and Payment atomically.
     // If either insert fails, neither is committed.
-    const registration = await prisma.$transaction(async (tx) => {
+    const registration = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const reg = await tx.registration.create({
         data: {
           firstName: dto.firstName.trim(),
@@ -144,7 +145,7 @@ export class RegistrationService {
     reference: string,
     koraRawResponse: unknown
   ): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const payment = await tx.payment.findUnique({ where: { reference } });
 
       if (!payment) {
@@ -183,7 +184,7 @@ export class RegistrationService {
 
   // ── Mark payment as failed ────────────────────────────────────────────────
   async markPaymentFailed(reference: string): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const payment = await tx.payment.findUnique({ where: { reference } });
 
       if (!payment || payment.status === PaymentStatus.PAID) return;
