@@ -93,6 +93,52 @@ export class RegistrationController {
     }
   };
 
+  // ── POST /api/registration/attendance-only ─────────
+  // Register attendee without course selection and without payment.
+  registerAttendanceOnly = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const dto = req.body as CreateRegistrationDto;
+
+      const errors = this.registrationService.validateAttendanceOnly(dto);
+
+      if (Object.keys(errors).length > 0) {
+        res.status(422).json({
+          success: false,
+          message: "Validation failed. Please check the highlighted fields.",
+          errors,
+        });
+        return;
+      }
+
+      const registration =
+        await this.registrationService.createAttendanceOnlyRegistration(dto);
+
+      res.status(201).json({
+        success: true,
+        message: "Registration completed for attendance only.",
+        data: {
+          registrationId: registration.registrationId,
+          paymentReference: registration.paymentReference,
+          paymentRequired: false,
+        },
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred.";
+
+      if (message.includes("already registered")) {
+        res.status(409).json({ success: false, message });
+        return;
+      }
+
+      next(error);
+    }
+  };
+
   // ── GET /api/registration/:id ─────
   // Fetch a single registration by ID (e.g. to show a confirmation page).
   getById = async (

@@ -37,9 +37,30 @@ interface VerifyResult {
     };
   };
 }
+
+interface AttendanceOnlyRegisterResponse {
+  data: {
+    success: boolean;
+    message: string;
+    data: {
+      registrationId: string;
+      paymentReference: string;
+      paymentRequired: boolean;
+    };
+  };
+}
+
 export const register = async (userData: RegisterData) => {
   const response: RegisterResponse = await axios.post(
     `${import.meta.env.VITE_API_URL}/registration`,
+    userData,
+  );
+  return response.data;
+};
+
+export const registerAttendanceOnly = async (userData: RegisterData) => {
+  const response: AttendanceOnlyRegisterResponse = await axios.post(
+    `${import.meta.env.VITE_API_URL}/registration/attendance-only`,
     userData,
   );
   return response.data;

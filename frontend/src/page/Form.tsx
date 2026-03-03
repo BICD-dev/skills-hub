@@ -4,7 +4,7 @@ import { TREM_BRANCHES } from "../constants/tremBranches";
 import { COURSES } from "../constants/courses";
 import { Field } from "../component/Field";
 import { CourseOption } from "../component/CourseOption";
-import { register } from "../api/register.api";
+import { register, registerAttendanceOnly } from "../api/register.api";
 import { toast } from "react-hot-toast";
 // import { useNavigate } from "react-router-dom";
 
@@ -16,6 +16,7 @@ interface FormState {
   email: string;
   isMember: string;
   branch: string;
+  interestedInSkillsHub: boolean;
   physicalCourse: string;
   onlineCourses: string[];
 }
@@ -52,24 +53,33 @@ const formSchema = yup.object().shape({
     then: (schema) => schema.required("Required"),
     otherwise: (schema) => schema.notRequired(),
   }),
+  interestedInSkillsHub: yup.boolean().required(),
   physicalCourse: yup.string().notRequired(),
   onlineCourses: yup.array().of(yup.string()).notRequired(),
-}).test("at-least-one-course", function (values) {
-  const hasPhysical = !!values.physicalCourse?.trim();
-  const hasOnline = Array.isArray(values.onlineCourses) && values.onlineCourses.length > 0;
+}).test("course-selection-rules", function (values) {
+  if (!values.interestedInSkillsHub) {
+    return true;
+  }
 
-  if (hasPhysical || hasOnline) {
+  const hasPhysical = !!values.physicalCourse?.trim();
+  const onlineCount = Array.isArray(values.onlineCourses) ? values.onlineCourses.length : 0;
+  const validCombo =
+    (hasPhysical && onlineCount === 1) || (!hasPhysical && onlineCount === 2);
+
+  if (validCombo) {
     return true;
   }
 
   throw new yup.ValidationError([
     this.createError({
       path: "physicalCourse",
-      message: "Please select at least one physical or online course",
+      message:
+        "Select either 1 physical + 1 online course, or 2 online courses.",
     }),
     this.createError({
       path: "onlineCourses",
-      message: "Please select at least one physical or online course",
+      message:
+        "Select either 1 physical + 1 online course, or 2 online courses.",
     }),
   ]);
 });
@@ -83,11 +93,13 @@ export default function LeadConferenceForm(): JSX.Element {
     email: "",
     isMember: "",
     branch: "",
+    interestedInSkillsHub: false,
     physicalCourse: "",
     onlineCourses: [],
   });
 
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [submissionMode, setSubmissionMode] = useState<"payment" | "attendance" | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mounted] = useState<boolean>(true); // check if this might cause bugs later on
@@ -133,12 +145,21 @@ export default function LeadConferenceForm(): JSX.Element {
   };
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setForm((prev) => {
-      const updated = { ...prev, [name]: value };
+      const updated = {
+        ...prev,
+        [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      } as FormState;
+
       // Clear branch if isMember changes to anything other than "yes"
       if (name === "isMember" && value !== "yes") {
         updated.branch = "";
+      }
+
+      if (name === "interestedInSkillsHub" && !updated.interestedInSkillsHub) {
+        updated.physicalCourse = "";
+        updated.onlineCourses = [];
       }
       return updated;
     });
@@ -151,23 +172,43 @@ export default function LeadConferenceForm(): JSX.Element {
         setIsLoading(true);
         try {
             // call the api
-        const result = await register({
+        if (form.interestedInSkillsHub) {
+          const result = await register({
+              firstName: form.firstName,
+              lastName: form.lastName,
+              email: form.email,
+              phone: form.phone,
+              isMember: form.isMember === "yes",
+              branch: form.isMember === "yes" ? form.branch : undefined,
+              physicalCourse: form.physicalCourse,
+              onlineCourses: form.onlineCourses,
+          });
+
+          toast.success("Registration successful! Redirecting to payment...");
+          setSubmissionMode("payment");
+          setSubmitted(true);
+
+          setTimeout(() => {
+            window.location.href = result.data.checkoutUrl;
+          }, 1000);
+        } else {
+          await registerAttendanceOnly({
             firstName: form.firstName,
             lastName: form.lastName,
             email: form.email,
             phone: form.phone,
             isMember: form.isMember === "yes",
             branch: form.isMember === "yes" ? form.branch : undefined,
-            physicalCourse: form.physicalCourse,
-            onlineCourses: form.onlineCourses,
-        });
+            physicalCourse: "",
+            onlineCourses: [],
+          });
 
-        toast.success("Registration successful! Redirecting to payment...");
-        setSubmitted(true);
+          toast.success("Attendance registration completed successfully.");
+          setSubmissionMode("attendance");
+          setSubmitted(true);
+          setIsLoading(false);
+        }
 
-        setTimeout(() => {
-          window.location.href = result.data.checkoutUrl;
-        }, 1000);
         return;
         } catch (error) {
             console.error("Registration failed:", error);
@@ -211,9 +252,6 @@ export default function LeadConferenceForm(): JSX.Element {
             setIsLoading(false);
             return;
         }
-        
- setSubmitted(true);
-        
     };
   };
 
@@ -226,10 +264,14 @@ export default function LeadConferenceForm(): JSX.Element {
         >
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-3xl font-black uppercase tracking-tight text-black mb-2">
-            You will be redirected to pay the application fee
+            {submissionMode === "payment"
+              ? "You will be redirected to pay the application fee"
+              : "Your attendance registration is complete"}
           </h2>
           <p className="text-black/60 font-medium mb-8">
-            Please stay on this page!!!
+            {submissionMode === "payment"
+              ? "Please stay on this page!!!"
+              : "Thank you for registering your attendance."}
           </p>
          
         </div>
@@ -375,10 +417,31 @@ export default function LeadConferenceForm(): JSX.Element {
 
               <Divider />
 
-              {/* ── SECTION: Physical Courses ── */}
+              {/* ── SECTION: Skills Hub Interest ── */}
               <div className="stagger-3">
+                <SectionTitle label="Skills Hub Interest" number="03" />
+                <div className="mt-4 border-2 border-black p-4 bg-yellow-50">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="interestedInSkillsHub"
+                      checked={form.interestedInSkillsHub}
+                      onChange={onChange}
+                      className="mt-1 w-4 h-4 accent-yellow-400"
+                    />
+                    <span className="text-sm font-semibold text-black uppercase tracking-wide">
+                      are you interested in applying for the skills hub
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {form.interestedInSkillsHub && (
+                <>
+              {/* ── SECTION: Physical Courses ── */}
+              <div className="stagger-4">
                 <div className="flex items-center justify-between">
-                  <SectionTitle label="Physical Course" number="03" />
+                  <SectionTitle label="Physical Course" number="04" />
                   {form.physicalCourse && (
                     <button
                       type="button"
@@ -409,8 +472,8 @@ export default function LeadConferenceForm(): JSX.Element {
               <Divider />
 
               {/* ── SECTION: Online Courses ── */}
-              <div className="stagger-4">
-                <SectionTitle label="Online Courses" number="04" />
+              <div className="stagger-5">
+                <SectionTitle label="Online Courses" number="05" />
                 <div className="flex items-center justify-between mt-1 mb-4">
                   <p className="text-xs text-black/40 uppercase tracking-widest">
                     Select up to 2 online courses
@@ -445,9 +508,11 @@ export default function LeadConferenceForm(): JSX.Element {
               </div>
 
               <Divider />
+                </>
+              )}
 
               {/* ── SUBMIT ── */}
-              <div className="stagger-5 pt-2">
+              <div className="stagger-6 pt-2">
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -475,7 +540,13 @@ export default function LeadConferenceForm(): JSX.Element {
                       />
                     </svg>
                   )}
-                  <span>{isLoading ? "Processing..." : "Complete Registration →"}</span>
+                  <span>
+                    {isLoading
+                      ? "Processing..."
+                      : form.interestedInSkillsHub
+                      ? "Complete Registration →"
+                      : "Register Attendance →"}
+                  </span>
                 </button>
                 <p className="text-center text-xs text-black/30 mt-4 uppercase tracking-widest">
                   Fields marked with <span className="text-red-600">*</span> are required

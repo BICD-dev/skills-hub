@@ -60,6 +60,43 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
   return errors;
 }
 
+validateAttendanceOnly(dto: CreateRegistrationDto): ValidationErrors {
+  const errors: ValidationErrors = {};
+
+  if (!dto.firstName?.trim()) errors.firstName = "First name is required.";
+  if (!dto.lastName?.trim()) errors.lastName = "Last name is required.";
+
+  if (!dto.phone?.trim()) {
+    errors.phone = "Phone number is required.";
+  } else if (!/^\+?[\d\s\-()]{7,15}$/.test(dto.phone.trim())) {
+    errors.phone = "Please enter a valid phone number.";
+  }
+
+  if (!dto.email?.trim()) {
+    errors.email = "Email address is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dto.email.trim())) {
+    errors.email = "Please enter a valid email address.";
+  }
+
+  if (typeof dto.isMember !== "boolean") {
+    errors.isMember = "Please indicate your TREM membership status.";
+  }
+
+  if (dto.isMember && !dto.branch?.trim()) {
+    errors.branch = "Please select your TREM branch.";
+  }
+
+  const hasPhysical = !!dto.physicalCourse?.trim();
+  const hasOnline = Array.isArray(dto.onlineCourses) && dto.onlineCourses.length > 0;
+
+  if (hasPhysical || hasOnline) {
+    errors.courses =
+      "This endpoint is only for attendees who are not selecting any course.";
+  }
+
+  return errors;
+}
+
   // ── Create a pending registration ─────────────────────────────────────────
   // This is called BEFORE payment. The registration starts as PENDING.
   // Payment must be confirmed (via webhook or verify endpoint) to mark it PAID.
@@ -95,7 +132,7 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
         phone: dto.phone.trim(),
         isMember: dto.isMember,
         branch: dto.isMember ? dto.branch?.trim() ?? null : null,
-        physicalCourse: dto.physicalCourse?.trim() ?? null,
+        physicalCourse: dto.physicalCourse?.trim() || "",
         onlineCourses: dto.onlineCourses?.map((c) => c.trim()) ?? [],
         paymentReference: paymentReference, // Update to new reference
         paymentStatus: PaymentStatus.PENDING,
@@ -107,7 +144,7 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
         email: email,
         isMember: dto.isMember,
         branch: dto.isMember ? dto.branch?.trim() ?? null : null,
-        physicalCourse: dto.physicalCourse?.trim() ?? null,
+        physicalCourse: dto.physicalCourse?.trim() || "",
         onlineCourses: dto.onlineCourses?.map((c) => c.trim()) ?? [],
         paymentReference: paymentReference,
         paymentStatus: PaymentStatus.PENDING,
@@ -142,6 +179,67 @@ validate(dto: CreateRegistrationDto): ValidationErrors {
     fullName: `${result.firstName} ${result.lastName}`,
   };
 }
+
+  async createAttendanceOnlyRegistration(
+    dto: CreateRegistrationDto
+  ): Promise<RegistrationCreatedResult> {
+    const email = dto.email.trim().toLowerCase();
+
+    const existingPaid = await prisma.registration.findFirst({
+      where: {
+        email: email,
+        paymentStatus: PaymentStatus.PAID,
+      },
+    });
+
+    if (existingPaid) {
+      throw new Error(
+        `This email address is already registered and payment has been confirmed.`
+      );
+    }
+
+    const attendanceReference = PaymentService.generateReference("ATTEND");
+
+    const result = await prisma.$transaction(async (tx) => {
+      const reg = await tx.registration.upsert({
+        where: { email: email },
+        update: {
+          firstName: dto.firstName.trim(),
+          lastName: dto.lastName.trim(),
+          phone: dto.phone.trim(),
+          isMember: dto.isMember,
+          branch: dto.isMember ? dto.branch?.trim() ?? null : null,
+          physicalCourse: "",
+          onlineCourses: [],
+          paymentReference: attendanceReference,
+          paymentStatus: PaymentStatus.PAID,
+        },
+        create: {
+          firstName: dto.firstName.trim(),
+          lastName: dto.lastName.trim(),
+          phone: dto.phone.trim(),
+          email: email,
+          isMember: dto.isMember,
+          branch: dto.isMember ? dto.branch?.trim() ?? null : null,
+          physicalCourse: "",
+          onlineCourses: [],
+          paymentReference: attendanceReference,
+          paymentStatus: PaymentStatus.PAID,
+        },
+      });
+
+      await tx.payment.deleteMany({ where: { registrationId: reg.id } });
+
+      return reg;
+    });
+
+    return {
+      registrationId: result.id,
+      paymentReference: result.paymentReference,
+      email: result.email,
+      fullName: `${result.firstName} ${result.lastName}`,
+    };
+  }
   // ── Mark payment as successful ────────────────────────────────────────────
   // Called by the webhook handler after Kora confirms payment.
   // Runs in a single transaction so both records stay in sync.

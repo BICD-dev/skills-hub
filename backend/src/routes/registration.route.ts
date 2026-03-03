@@ -24,6 +24,12 @@ registrationRouter.use(json());
 // ── Submit form & start payment ───────────────────────────────────────────────
 registrationRouter.post("/", registrationController.register);
 
+// ── Submit form without course selection/payment ─────────────────────────────
+registrationRouter.post(
+	"/attendance-only",
+	registrationController.registerAttendanceOnly
+);
+
 // ── Admin: list all paid registrations ───────────────────────────────────────
 // TODO: add your admin auth middleware here, e.g.:
 //   registrationRouter.get("/", adminAuthMiddleware, registrationController.getAllPaid);
