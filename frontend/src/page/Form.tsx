@@ -195,7 +195,7 @@ export default function LeadConferenceForm(): JSX.Element {
               onlineCourses: form.onlineCourses,
           });
 
-          toast.success("Registration successful! Redirecting to payment...");
+          toast.success("Redirecting to payment...");
           setSubmissionMode("payment");
           setSubmitted(true);
 
@@ -282,7 +282,7 @@ export default function LeadConferenceForm(): JSX.Element {
           <p className="text-black/60 font-medium mb-8">
             {submissionMode === "payment"
               ? "Please stay on this page!!!"
-              : "Thank you for registering your attendance."}
+              : "Thank you for registering for Lead Conference."}
           </p>
          
         </div>
@@ -327,7 +327,7 @@ export default function LeadConferenceForm(): JSX.Element {
                 ATTENDEE REGISTRATION
               </h2>
               <p className="text-sm text-black/60 font-medium mt-0.5">
-                Fill in your details to register for the Lead Conference Skills Hub.
+                Fill in your details to register for Lead Conference and the Skills Hub.
               </p>
             </div>
 
