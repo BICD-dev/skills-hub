@@ -147,9 +147,20 @@ export default function LeadConferenceForm(): JSX.Element {
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { name, value, type } = e.target;
     setForm((prev) => {
+      // Handle different field types
+      let fieldValue: string | boolean | string[];
+      if (type === "checkbox") {
+        fieldValue = (e.target as HTMLInputElement).checked;
+      } else if (name === "interestedInSkillsHub") {
+        // Convert string "true"/"false" to boolean
+        fieldValue = value === "true";
+      } else {
+        fieldValue = value;
+      }
+
       const updated = {
         ...prev,
-        [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+        [name]: fieldValue,
       } as FormState;
 
       // Clear branch if isMember changes to anything other than "yes"
@@ -178,7 +189,7 @@ export default function LeadConferenceForm(): JSX.Element {
               lastName: form.lastName,
               email: form.email,
               phone: form.phone,
-              isMember: form.isMember === "yes",
+              isMember: form.isMember === "yes", // im sending out a boolean here
               branch: form.isMember === "yes" ? form.branch : undefined,
               physicalCourse: form.physicalCourse,
               onlineCourses: form.onlineCourses,
@@ -421,20 +432,25 @@ export default function LeadConferenceForm(): JSX.Element {
               <div className="stagger-3">
                 <SectionTitle label="Skills Hub Interest" number="03" />
                 <div className="mt-4 border-2 border-black p-4 bg-yellow-50">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="interestedInSkillsHub"
-                      checked={form.interestedInSkillsHub}
-                      onChange={onChange}
-                      className="mt-1 w-4 h-4 accent-yellow-400"
-                    />
-                    <span className="text-sm font-semibold text-black uppercase tracking-wide">
-                      are you interested in applying for the skills hub
-                    </span>
-                  </label>
+                  <Field label="Are you interested in applying for the skills hub program?" required>
+                    <div className="select-wrapper">
+                      <select
+                        name="interestedInSkillsHub"
+                        className={selectCls + (errors.interestedInSkillsHub ? " border-red-600" : "")}
+                        value={String(form.interestedInSkillsHub)}
+                        onChange={onChange}
+                      >
+                        <option value="">– Select an option –</option>
+                        <option value="true">Yes, I am</option>
+                        <option value="false">No, I am not</option>
+                      </select>
+                    </div>
+                    {errors.interestedInSkillsHub && <ErrMsg msg={errors.interestedInSkillsHub} />}
+                  </Field>
                 </div>
               </div>
+
+                  
 
               {form.interestedInSkillsHub && (
                 <>
