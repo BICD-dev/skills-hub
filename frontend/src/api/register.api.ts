@@ -72,3 +72,33 @@ export const verifyPayment = async (reference: string) => {
   );
   return response.data;
 };
+export interface PaidRegistration {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  isMember: boolean;
+  branch: string | null;
+  physicalCourse: string | null;
+  onlineCourses: string[] | null;
+  paymentStatus: string;
+  paymentReference: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetAllPaidResponse {
+  data: {
+    status: boolean;
+    message: string;
+    data: PaidRegistration[];
+  };
+}
+
+export const getAllPaidRegistrations = async () => {
+  const response: GetAllPaidResponse = await axios.get(
+    `${import.meta.env.VITE_API_URL}/registration`,
+  );
+  return response.data;
+};
