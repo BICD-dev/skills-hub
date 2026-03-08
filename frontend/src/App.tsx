@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import LeadConferenceForm from "./page/Form";
 import PaymentVerification from "./page/RedirectPage";
 import AdminDashboard from "./page/AdminDashboard";
+import NotFound from "./page/NotFound";
 import "./App.css";
 const App = () => {
   return ( 
@@ -10,6 +11,7 @@ const App = () => {
         <Route path="/" element={<LeadConferenceForm />} />
         <Route path="/registration/success" element={<PaymentVerification />} />
         <Route path="/admin/bright" element={<AdminDashboard />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
    );
