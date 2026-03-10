@@ -5,6 +5,7 @@ import configService from "./config/config";
 import paymentRouter from "./routes/payment.route";
 import { errorHandler } from "./utils/middleware/error.middleware";
 import registrationRouter from "./routes/registration.route";
+import emailPreviewRouter from "./routes/email-preview.route";
 const app = express();
 
 // validate env variables on startup
@@ -24,6 +25,11 @@ app.use(express.json());
 // routes
 app.use("/api/payment", paymentRouter);
 app.use("/api/registration", registrationRouter);
+
+// ── Dev-only email preview (never active in production) ───────────────────────
+if (process.env.NODE_ENV !== "production") {
+  app.use("/dev/email-preview", emailPreviewRouter);
+}
 
 app.use(errorHandler);
 

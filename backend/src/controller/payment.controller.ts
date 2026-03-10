@@ -5,12 +5,15 @@
 
 import { Request, Response, NextFunction } from "express";
 import { PaymentService } from "../services/payment.service";
+import { RegistrationService } from "../services/registration.service";
 
 export class PaymentController {
   private readonly paymentService: PaymentService;
+  private readonly registrationService: RegistrationService;
 
   constructor() {
     this.paymentService = new PaymentService();
+    this.registrationService = new RegistrationService();
   }
 
   // ── POST /api/payment/initiate ───────────────────────────────────────────────
@@ -96,19 +99,28 @@ export class PaymentController {
         return;
       }
 
-      const result = await this.paymentService.verifyPayment(reference as string);
+      const verifiedPayment = await this.paymentService.verifyPayment(reference as string);
 
-      if (result.paid) {
+      if (verifiedPayment.paid) {
+        await this.registrationService.markPaymentSuccessful(
+          reference as string,
+          verifiedPayment
+        );
+      } else if (verifiedPayment.status === "failed") {
+        await this.registrationService.markPaymentFailed(reference as string);
+      }
+
+      if (verifiedPayment.paid) {
         res.status(200).json({
           success: true,
           message: "Payment verified successfully.",
-          data: result,
+          data: verifiedPayment,
         });
       } else {
         res.status(402).json({
           success: false,
-          message: `Payment not completed. Current status: ${result.status}.`,
-          data: result,
+          message: `Payment not completed. Current status: ${verifiedPayment.status}.`,
+          data: verifiedPayment,
         });
       }
     } catch (error) {

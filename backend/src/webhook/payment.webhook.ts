@@ -124,34 +124,10 @@ export class PaymentWebhook {
       reference,
       rawPayload.data   // stored as koraRawResponse for audit purposes
     );
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // TODO: hook in your email service here, e.g.:
-    //
-    //   const reg = await this.registrationService.getByReference(reference);
-    //   if (reg) {
-    //     await emailService.sendConfirmation({
-    //       to: reg.email,
-    //       name: `${reg.firstName} ${reg.lastName}`,
-    //       reference,
-    //     });
-    //   }
-    //
-    // ─────────────────────────────────────────────────────────────────────────
   }
 
   // ── charge.failed ──────────────────────────────────────────────────────────
   private async onChargeFailed(reference: string): Promise<void> {
     await this.registrationService.markPaymentFailed(reference);
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // TODO: hook in your email service here, e.g.:
-    //
-    //   const reg = await this.registrationService.getByReference(reference);
-    //   if (reg) {
-    //     await emailService.sendPaymentFailedNotice({ to: reg.email });
-    //   }
-    //
-    // ─────────────────────────────────────────────────────────────────────────
   }
 }

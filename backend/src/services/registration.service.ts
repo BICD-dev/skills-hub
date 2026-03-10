@@ -14,9 +14,11 @@ import {
 } from "../types/registration.types";
 import { errorHandler } from "../utils/middleware/error.middleware";
 import { Prisma } from "../generated/prisma/client";
+import { EmailService } from "../utils/email/email.service";
 
 export class RegistrationService {
   private readonly errorhandler = errorHandler
+  private readonly emailService = new EmailService();
     // change this to class validator later, fine for now since there is just one dto and not much logic
 validate(dto: CreateRegistrationDto): ValidationErrors {
   const errors: ValidationErrors = {};
@@ -233,6 +235,8 @@ validateAttendanceOnly(dto: CreateRegistrationDto): ValidationErrors {
       return reg;
     });
 
+    await this.sendAttendanceOnlyWelcomeEmail(result);
+
     return {
       registrationId: result.id,
       paymentReference: result.paymentReference,
@@ -247,6 +251,8 @@ validateAttendanceOnly(dto: CreateRegistrationDto): ValidationErrors {
     reference: string,
     koraRawResponse: unknown
   ): Promise<void> {
+    let registrationToNotify: RegistrationRecord | null = null;
+
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const payment = await tx.payment.findUnique({ where: { reference } });
 
@@ -273,11 +279,15 @@ validateAttendanceOnly(dto: CreateRegistrationDto): ValidationErrors {
         },
       });
 
-      await tx.registration.update({
+      registrationToNotify = await tx.registration.update({
         where: { paymentReference: reference },
         data: { paymentStatus: PaymentStatus.PAID },
       });
     });
+
+    if (registrationToNotify) {
+      await this.sendPaidRegistrationWelcomeEmail(registrationToNotify);
+    }
 
     console.log(
       `[RegistrationService] Registration marked PAID for reference: ${reference}`
@@ -327,6 +337,32 @@ validateAttendanceOnly(dto: CreateRegistrationDto): ValidationErrors {
       where: { paymentStatus: PaymentStatus.PAID },
       orderBy: { createdAt: "desc" },
     });
+  }
+
+  private async sendAttendanceOnlyWelcomeEmail(
+    registration: Pick<RegistrationRecord, "firstName" | "email">
+  ): Promise<void> {
+    try {
+      await this.emailService.sendAttendanceOnlyWelcome({
+        to: registration.email,
+        firstName: registration.firstName,
+      });
+    } catch (error) {
+      console.error("[RegistrationService] Failed to send attendance email:", error);
+    }
+  }
+
+  private async sendPaidRegistrationWelcomeEmail(
+    registration: Pick<RegistrationRecord, "firstName" | "email">
+  ): Promise<void> {
+    try {
+      await this.emailService.sendPaidRegistrationWelcome({
+        to: registration.email,
+        firstName: registration.firstName,
+      });
+    } catch (error) {
+      console.error("[RegistrationService] Failed to send paid registration email:", error);
+    }
   }
 }
 

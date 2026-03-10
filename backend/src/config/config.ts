@@ -13,6 +13,18 @@ interface Config {
     redirectUrl: string;
     webhookUrl: string;
   };
+  email: {
+    enabled: boolean;
+    smtpHost: string;
+    smtpPort: number;
+    smtpSecure: boolean;
+    smtpUser: string;
+    smtpPass: string;
+    fromName: string;
+    fromAddress: string;
+    attendanceGroupUrl: string;
+    skillsHubGroupUrl: string;
+  };
 }
 
 
@@ -54,7 +66,55 @@ const validationSchema: Record<string, ValidationRule> = {
     validator: (value) => /^https?:\/\/.+/.test(value),
     errorMessage: "KORAPAY_WEBHOOK_URL must be a valid URL",
   },
+  EMAIL_ENABLED: {
+    required: false,
+    validator: (value) => /^(true|false)$/i.test(value),
+    errorMessage: "EMAIL_ENABLED must be true or false",
+  },
+  EMAIL_SMTP_HOST: {
+    required: false,
+  },
+  EMAIL_SMTP_PORT: {
+    required: false,
+    validator: (value) => !isNaN(Number(value)) && Number(value) > 0,
+    errorMessage: "EMAIL_SMTP_PORT must be a positive number",
+  },
+  EMAIL_SMTP_SECURE: {
+    required: false,
+    validator: (value) => /^(true|false)$/i.test(value),
+    errorMessage: "EMAIL_SMTP_SECURE must be true or false",
+  },
+  EMAIL_SMTP_USER: {
+    required: false,
+  },
+  EMAIL_SMTP_PASS: {
+    required: false,
+  },
+  EMAIL_FROM_NAME: {
+    required: false,
+  },
+  EMAIL_FROM_ADDRESS: {
+    required: false,
+  },
+  EMAIL_ATTENDANCE_GROUP_URL: {
+    required: false,
+    validator: (value) => /^https?:\/\/.+/.test(value),
+    errorMessage: "EMAIL_ATTENDANCE_GROUP_URL must be a valid URL",
+  },
+  EMAIL_SKILLS_HUB_GROUP_URL: {
+    required: false,
+    validator: (value) => /^https?:\/\/.+/.test(value),
+    errorMessage: "EMAIL_SKILLS_HUB_GROUP_URL must be a valid URL",
+  },
 };
+
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (!value) {
+    return fallback;
+  }
+
+  return value.toLowerCase() === "true";
+}
 
 // ─── VALIDATION FUNCTION ──────────────────────────────────────────────────────
 function validateEnv(envVars: NodeJS.ProcessEnv): string[] {
@@ -102,6 +162,18 @@ class ConfigService {
         redirectUrl: "",
         webhookUrl: "",
       },
+      email: {
+        enabled: false,
+        smtpHost: "smtp.gmail.com",
+        smtpPort: 465,
+        smtpSecure: true,
+        smtpUser: "",
+        smtpPass: "",
+        fromName: "Lead Conference",
+        fromAddress: "",
+        attendanceGroupUrl: "https://example.com/lead-conference-attendees",
+        skillsHubGroupUrl: "https://chat.whatsapp.com/example-lead-skills-hub",
+      },
     };
   }
 
@@ -115,6 +187,23 @@ class ConfigService {
     }
 
     const errors = validateEnv(process.env);
+    const emailEnabled = parseBoolean(process.env.EMAIL_ENABLED, false);
+
+    if (emailEnabled) {
+      const requiredEmailKeys = [
+        "EMAIL_SMTP_USER",
+        "EMAIL_SMTP_PASS",
+        "EMAIL_FROM_ADDRESS",
+      ];
+
+      requiredEmailKeys.forEach((key) => {
+        const value = process.env[key];
+
+        if (!value || value.trim() === "") {
+          errors.push(`${key} is required when EMAIL_ENABLED=true`);
+        }
+      });
+    }
 
     if (errors.length > 0) {
       const errorMessage = `Environment validation failed:\n${errors.map((e) => `  • ${e}`).join("\n")}`;
@@ -130,6 +219,22 @@ class ConfigService {
         publicKey: process.env.KORAPAY_PUBLIC_KEY || "",
         redirectUrl: process.env.KORAPAY_REDIRECT_URL || "",
         webhookUrl: process.env.KORAPAY_WEBHOOK_URL || "",
+      },
+      email: {
+        enabled: emailEnabled,
+        smtpHost: process.env.EMAIL_SMTP_HOST || "smtp.gmail.com",
+        smtpPort: process.env.EMAIL_SMTP_PORT ? Number(process.env.EMAIL_SMTP_PORT) : 465,
+        smtpSecure: parseBoolean(process.env.EMAIL_SMTP_SECURE, true),
+        smtpUser: process.env.EMAIL_SMTP_USER || "",
+        smtpPass: process.env.EMAIL_SMTP_PASS || "",
+        fromName: process.env.EMAIL_FROM_NAME || "Lead Conference",
+        fromAddress: process.env.EMAIL_FROM_ADDRESS || "",
+        attendanceGroupUrl:
+          process.env.EMAIL_ATTENDANCE_GROUP_URL ||
+          "https://example.com/lead-conference-attendees",
+        skillsHubGroupUrl:
+          process.env.EMAIL_SKILLS_HUB_GROUP_URL ||
+          "https://chat.whatsapp.com/example-lead-skills-hub",
       },
     };
 
@@ -181,6 +286,10 @@ class ConfigService {
    */
   getKorapayConfig() {
     return this.get("korapay");
+  }
+
+  getEmailConfig() {
+    return this.get("email");
   }
 }
 
