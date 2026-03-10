@@ -26,7 +26,6 @@ interface Config {
     attendanceGroupUrl: string;
     skillsHubGroupUrl: string;
     brevo: {
-      smtpUser: string;
       apiKey: string;
     };
   };
@@ -80,9 +79,6 @@ const validationSchema: Record<string, ValidationRule> = {
     required: false,
     validator: (value) => /^(smtp|brevo)$/i.test(value),
     errorMessage: "EMAIL_PROVIDER must be 'smtp' or 'brevo'",
-  },
-  BREVO_SMTP_USER: {
-    required: false,
   },
   BREVO_API_KEY: {
     required: false,
@@ -191,7 +187,6 @@ class ConfigService {
         attendanceGroupUrl: "https://example.com/lead-conference-attendees",
         skillsHubGroupUrl: "https://chat.whatsapp.com/example-lead-skills-hub",
         brevo: {
-          smtpUser: "",
           apiKey: "",
         },
       },
@@ -214,7 +209,7 @@ class ConfigService {
       const emailProvider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase();
 
       if (emailProvider === "brevo") {
-        const requiredBrevoKeys = ["BREVO_SMTP_USER", "BREVO_API_KEY", "EMAIL_FROM_ADDRESS"];
+        const requiredBrevoKeys = ["BREVO_API_KEY", "EMAIL_FROM_ADDRESS"];
         requiredBrevoKeys.forEach((key) => {
           const value = process.env[key];
           if (!value || value.trim() === "") {
@@ -264,7 +259,6 @@ class ConfigService {
           process.env.EMAIL_SKILLS_HUB_GROUP_URL ||
           "https://chat.whatsapp.com/example-lead-skills-hub",
         brevo: {
-          smtpUser: process.env.BREVO_SMTP_USER || "",
           apiKey: process.env.BREVO_API_KEY || "",
         },
       },
@@ -320,7 +314,7 @@ class ConfigService {
     return this.get("korapay");
   }
 
-  getEmailConfig() {
+  getEmailConfig(): Config["email"] {
     return this.get("email");
   }
 }

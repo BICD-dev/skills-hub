@@ -366,3 +366,5 @@ validateAttendanceOnly(dto: CreateRegistrationDto): ValidationErrors {
   }
 }
 
+ 
+

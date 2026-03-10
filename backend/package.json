@@ -13,6 +13,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^4.0.1",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "@vercel/config": "^0.0.35",
