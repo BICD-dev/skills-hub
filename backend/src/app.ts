@@ -6,6 +6,7 @@ import paymentRouter from "./routes/payment.route";
 import { errorHandler } from "./utils/middleware/error.middleware";
 import registrationRouter from "./routes/registration.route";
 import emailPreviewRouter from "./routes/email-preview.route";
+import { runEmailHealthCheck } from "./utils/email/email.client";
 const app = express();
 
 // validate env variables on startup
@@ -16,6 +17,11 @@ try {
   console.error(error instanceof Error ? error.message : "Unknown error");
   process.exit(1);
 }
+
+void runEmailHealthCheck().then((result) => {
+  const log = result.ok ? console.log : console.error;
+  log(`[EmailHealthCheck:${result.provider}] ${result.message}`);
+});
 
 //  middlewarea
 app.use(helmet());
