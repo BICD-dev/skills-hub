@@ -15,6 +15,7 @@ interface Config {
   };
   email: {
     enabled: boolean;
+    provider: "smtp" | "brevo";
     smtpHost: string;
     smtpPort: number;
     smtpSecure: boolean;
@@ -24,6 +25,10 @@ interface Config {
     fromAddress: string;
     attendanceGroupUrl: string;
     skillsHubGroupUrl: string;
+    brevo: {
+      smtpUser: string;
+      apiKey: string;
+    };
   };
 }
 
@@ -70,6 +75,17 @@ const validationSchema: Record<string, ValidationRule> = {
     required: false,
     validator: (value) => /^(true|false)$/i.test(value),
     errorMessage: "EMAIL_ENABLED must be true or false",
+  },
+  EMAIL_PROVIDER: {
+    required: false,
+    validator: (value) => /^(smtp|brevo)$/i.test(value),
+    errorMessage: "EMAIL_PROVIDER must be 'smtp' or 'brevo'",
+  },
+  BREVO_SMTP_USER: {
+    required: false,
+  },
+  BREVO_API_KEY: {
+    required: false,
   },
   EMAIL_SMTP_HOST: {
     required: false,
@@ -164,6 +180,7 @@ class ConfigService {
       },
       email: {
         enabled: false,
+        provider: "smtp",
         smtpHost: "smtp.gmail.com",
         smtpPort: 465,
         smtpSecure: true,
@@ -173,6 +190,10 @@ class ConfigService {
         fromAddress: "",
         attendanceGroupUrl: "https://example.com/lead-conference-attendees",
         skillsHubGroupUrl: "https://chat.whatsapp.com/example-lead-skills-hub",
+        brevo: {
+          smtpUser: "",
+          apiKey: "",
+        },
       },
     };
   }
@@ -190,19 +211,25 @@ class ConfigService {
     const emailEnabled = parseBoolean(process.env.EMAIL_ENABLED, false);
 
     if (emailEnabled) {
-      const requiredEmailKeys = [
-        "EMAIL_SMTP_USER",
-        "EMAIL_SMTP_PASS",
-        "EMAIL_FROM_ADDRESS",
-      ];
+      const emailProvider = (process.env.EMAIL_PROVIDER || "smtp").toLowerCase();
 
-      requiredEmailKeys.forEach((key) => {
-        const value = process.env[key];
-
-        if (!value || value.trim() === "") {
-          errors.push(`${key} is required when EMAIL_ENABLED=true`);
-        }
-      });
+      if (emailProvider === "brevo") {
+        const requiredBrevoKeys = ["BREVO_SMTP_USER", "BREVO_API_KEY", "EMAIL_FROM_ADDRESS"];
+        requiredBrevoKeys.forEach((key) => {
+          const value = process.env[key];
+          if (!value || value.trim() === "") {
+            errors.push(`${key} is required when EMAIL_ENABLED=true and EMAIL_PROVIDER=brevo`);
+          }
+        });
+      } else {
+        const requiredSmtpKeys = ["EMAIL_SMTP_USER", "EMAIL_SMTP_PASS", "EMAIL_FROM_ADDRESS"];
+        requiredSmtpKeys.forEach((key) => {
+          const value = process.env[key];
+          if (!value || value.trim() === "") {
+            errors.push(`${key} is required when EMAIL_ENABLED=true`);
+          }
+        });
+      }
     }
 
     if (errors.length > 0) {
@@ -222,6 +249,7 @@ class ConfigService {
       },
       email: {
         enabled: emailEnabled,
+        provider: (process.env.EMAIL_PROVIDER as "smtp" | "brevo") || "smtp",
         smtpHost: process.env.EMAIL_SMTP_HOST || "smtp.gmail.com",
         smtpPort: process.env.EMAIL_SMTP_PORT ? Number(process.env.EMAIL_SMTP_PORT) : 465,
         smtpSecure: parseBoolean(process.env.EMAIL_SMTP_SECURE, true),
@@ -235,6 +263,10 @@ class ConfigService {
         skillsHubGroupUrl:
           process.env.EMAIL_SKILLS_HUB_GROUP_URL ||
           "https://chat.whatsapp.com/example-lead-skills-hub",
+        brevo: {
+          smtpUser: process.env.BREVO_SMTP_USER || "",
+          apiKey: process.env.BREVO_API_KEY || "",
+        },
       },
     };
 
