@@ -35,8 +35,8 @@ interface EmailFrameOptions {
   headline: string;
   intro: string[];
   highlight: string;
-  buttonLabel: string;
-  buttonUrl: string;
+  buttonLabel?: string;
+  buttonUrl?: string;
   supportContacts?: string[];
   closingLine: string;
 }
@@ -52,7 +52,7 @@ export function buildEmailHtml({
   supportContacts = [],
   closingLine,
 }: EmailFrameOptions): string {
-  const safeButtonUrl = escapeHtml(buttonUrl);
+  const safeButtonUrl = buttonUrl ? escapeHtml(buttonUrl) : undefined;
   const introHtml = intro
     .map((paragraph) => `<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.7;">${escapeHtml(paragraph)}</p>`)
     .join("");
@@ -103,23 +103,8 @@ export function buildEmailHtml({
                 <div style="margin:0 0 24px;padding:18px;border-left:6px solid #facc15;background:#fff7cc;">
                   <p style="margin:0;color:#111111;font-size:15px;line-height:1.7;font-weight:700;">${escapeHtml(highlight)}</p>
                 </div>
-                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 16px;">
-                  <tr>
-                    <td align="center" bgcolor="#111111" style="border:2px solid #111111;">
-                      <a href="${safeButtonUrl}" style="display:inline-block;padding:14px 24px;color:#facc15;font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;">${escapeHtml(buttonLabel)}</a>
-                    </td>
-                  </tr>
-                </table>
                 <p style="margin:0;color:#4b5563;font-size:13px;line-height:1.6;">${escapeHtml(closingLine)}</p>
                 ${contactsHtml}
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:20px 28px 28px;background:#ffffff;">
-                <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.6;">If the button does not open, copy and paste this link into your browser:</p>
-                <p style="margin:10px 0 0;font-size:12px;line-height:1.6;word-break:break-all;">
-                  <a href="${safeButtonUrl}" style="color:#b91c1c;text-decoration:underline;">${safeButtonUrl}</a>
-                </p>
               </td>
             </tr>
           </table>

@@ -59,7 +59,7 @@ class BrevoEmailClient implements EmailClient {
       apiKey: emailConfig.brevo.apiKey,
     });
   }
-
+  
   async sendMail({ to, subject, html, text }: SendEmailArgs): Promise<void> {
     await this.client.transactionalEmails.sendTransacEmail({
       sender: {
