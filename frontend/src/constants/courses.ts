@@ -7,7 +7,7 @@ export const COURSES = {
   ],
   online: [
     { id: "o1", label: "Personal Branding" },
-    { id: "o2", label: "AI Content Creation & Marketing" },
+    { id: "o2", label: "AI Content Creation & Monetization" },
     { id: "o3", label: "Social Media Strategy & Monetization" },
     { id: "o4", label: "CV Writing & Interview Preparation" },
     { id: "o5", label: "Financial Literacy" },
