@@ -4,7 +4,7 @@ import { TREM_BRANCHES } from "../constants/tremBranches";
 import { COURSES } from "../constants/courses";
 import { Field } from "../component/Field";
 import { CourseOption } from "../component/CourseOption";
-import { register, registerAttendanceOnly } from "../api/register.api";
+import { RegistrationClosedModal } from "../component/RegistrationClosedModal";
 import { toast } from "react-hot-toast";
 // import { useNavigate } from "react-router-dom";
 
@@ -33,6 +33,8 @@ interface SectionTitleProps {
 interface ErrMsgProps {
   msg: string;
 }
+
+const REGISTRATION_CLOSED_MESSAGE = "Registration for Skills Hub 2026 has closed.";
 
 // ─── INPUT STYLES ─────────────────────────────────────────────────────────────
 const inputCls =
@@ -86,6 +88,7 @@ const formSchema = yup.object().shape({
 
 // ─── MAIN FORM ────────────────────────────────────────────────────────────────
 export default function LeadConferenceForm(): JSX.Element {
+  const isRegistrationClosed = true;
   const [form, setForm] = useState<FormState>({
     firstName: "",
     lastName: "",
@@ -98,9 +101,8 @@ export default function LeadConferenceForm(): JSX.Element {
     onlineCourses: [],
   });
 
-  const [submitted, setSubmitted] = useState<boolean>(false);
-  const [submissionMode, setSubmissionMode] = useState<"payment" | "attendance" | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [submitError, setSubmitError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mounted] = useState<boolean>(true); // check if this might cause bugs later on
 //   const navigate = useNavigate();
@@ -178,117 +180,9 @@ export default function LeadConferenceForm(): JSX.Element {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    const isValid = await validate();
-    if (isValid){
-        setIsLoading(true);
-        try {
-            // call the api
-        if (form.interestedInSkillsHub) {
-          const result = await register({
-              firstName: form.firstName,
-              lastName: form.lastName,
-              email: form.email,
-              phone: form.phone,
-              isMember: form.isMember === "yes", // im sending out a boolean here
-              branch: form.isMember === "yes" ? form.branch : undefined,
-              physicalCourse: form.physicalCourse,
-              onlineCourses: form.onlineCourses,
-          });
-
-          toast.success("Redirecting to payment...");
-          setSubmissionMode("payment");
-          setSubmitted(true);
-
-          setTimeout(() => {
-            window.location.href = result.data.checkoutUrl;
-          }, 1000);
-        } else {
-          await registerAttendanceOnly({
-            firstName: form.firstName,
-            lastName: form.lastName,
-            email: form.email,
-            phone: form.phone,
-            isMember: form.isMember === "yes",
-            branch: form.isMember === "yes" ? form.branch : undefined,
-            physicalCourse: "",
-            onlineCourses: [],
-          });
-
-          toast.success("Attendance registration completed successfully.");
-          setSubmissionMode("attendance");
-          setSubmitted(true);
-          setIsLoading(false);
-        }
-
-        return;
-        } catch (error) {
-            console.error("Registration failed:", error);
-
-            const errorData = (error as {
-              response?: {
-                data?: {
-                  message?: string;
-                  errors?: Record<string, string | string[]>;
-                };
-              };
-            })?.response?.data;
-
-            const backendMessage = errorData?.message;
-            const backendErrors = errorData?.errors;
-
-            if (!errorData) {
-              toast.error("Network error. Please check your internet connection and try again.", { id: "network-fallback" });
-            } else if (backendMessage) {
-              toast.error(backendMessage, { id: "backend-message" });
-            } else {
-              toast.error("Registration failed. Please try again later.", { id: "backend-fallback" });
-            }
-
-            if (backendErrors && typeof backendErrors === "object") {
-              const mappedErrors: FormErrors = {};
-
-              Object.entries(backendErrors).forEach(([key, value]) => {
-                const message = Array.isArray(value) ? value[0] : value;
-                if (typeof message === "string" && message.trim()) {
-                  mappedErrors[key] = message;
-                  toast.error(message, { id: `backend-field-${key}` });
-                }
-              });
-
-              if (Object.keys(mappedErrors).length > 0) {
-                setErrors((prev) => ({ ...prev, ...mappedErrors }));
-              }
-            }
-
-            setIsLoading(false);
-            return;
-        }
-    };
+    setSubmitError(REGISTRATION_CLOSED_MESSAGE);
+    toast.error(REGISTRATION_CLOSED_MESSAGE, { id: "registration-closed" });
   };
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-yellow-400 flex items-center justify-center p-6 font-sans">
-        <div
-          className="bg-white border-4 border-black p-12 max-w-md w-full text-center shadow-[8px_8px_0_black]"
-          style={{ animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}
-        >
-          <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-3xl font-black uppercase tracking-tight text-black mb-2">
-            {submissionMode === "payment"
-              ? "You will be redirected to pay the application fee"
-              : "Your attendance registration is complete"}
-          </h2>
-          <p className="text-black/60 font-medium mb-8">
-            {submissionMode === "payment"
-              ? "Please stay on this page!!!"
-              : "Thank you for registering for Lead Conference."}
-          </p>
-         
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -332,6 +226,7 @@ export default function LeadConferenceForm(): JSX.Element {
             </div>
 
             <form onSubmit={handleSubmit} className="px-8 py-8 flex flex-col gap-6" noValidate>
+              <fieldset disabled className="contents">
               {/* ── SECTION: Personal Info ── */}
               <div className="stagger-1">
                 <SectionTitle label="Personal Information" number="01" />
@@ -479,6 +374,7 @@ export default function LeadConferenceForm(): JSX.Element {
                       type="physical"
                       selected={form.physicalCourse === course.id}
                       onChange={() => setForm((prev) => ({ ...prev, physicalCourse: course.id }))}
+                      disabled
                     />
                   ))}
                 </div>
@@ -512,10 +408,7 @@ export default function LeadConferenceForm(): JSX.Element {
                       type="online"
                       selected={form.onlineCourses.includes(course.id)}
                       onChange={() => toggleOnline(course.id)}
-                      disabled={
-                        !form.onlineCourses.includes(course.id) &&
-                        form.onlineCourses.length >= 2
-                      }
+                      disabled
                     />
                   ))}
                 </div>
@@ -526,9 +419,17 @@ export default function LeadConferenceForm(): JSX.Element {
               <Divider />
                 </>
               )}
+              </fieldset>
 
               {/* ── SUBMIT ── */}
               <div className="stagger-6 pt-2">
+                {submitError && (
+                  <div className="mb-4 border-2 border-red-600 bg-red-50 px-4 py-3">
+                    <p className="text-sm font-bold text-red-700 uppercase tracking-wide">
+                      {submitError}
+                    </p>
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -580,6 +481,7 @@ export default function LeadConferenceForm(): JSX.Element {
           </div>
         </div>
       </div>
+      {isRegistrationClosed && <RegistrationClosedModal message={REGISTRATION_CLOSED_MESSAGE} />}
     </>
   );
 }
